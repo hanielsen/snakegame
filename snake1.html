@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Snake Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="snake.ico">
+<style>
+#gameCanvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+#score {
+    text-align: center;
+    font-size: 140px;
+    font-family: 'Antic Slab', 'comic sans ms', serif;
+}
+#start {
+    position:relative;
+    top: 350px;
+    display: none;
+    text-align: center;
+    font-size: 20px;
+    font-family: sans-serif;
+    color: blue;
+    animation: blinktext 1s linear infinite;
+}
+@keyframes blinktext {
+  50% {
+    opacity: 0;
+  }
+}
+</style>
+</head>
+<body>
+<div id="score">0</div>
+<canvas id="gameCanvas" ></canvas>
+<div id="start" onclick = "gameNew()">New Game</div>
+
+<script>
+const GAME_SPEED = 200;
+const CANVAS_BORDER_COLOUR = 'black';
+const CANVAS_BACKGROUND_COLOUR = "white";
+const TAIL_COLOUR = 'lightgreen';
+const TAIL_BORDER_COLOUR = 'darkgreen';
+const FOOD_COLOUR = 'red';
+const FOOD_BORDER_COLOUR = 'darkred';
+const HEAD_COLOUR = 'black';
+const HEAD_BORDER_COLOUR = 'black';
+const BOARD_WIDTH = 30;
+const BOARD_HEIGHT = 30;
+const SQUARE_WIDTH = 10;
+const SQUARE_HEIGHT = 10;
+
+let tail = [
+    {x: 14, y: 15},
+    {x: 13, y: 15},
+    {x: 12, y: 15},
+    {x: 11, y: 15}
+];
+let head = {x: 15, y: 15};
+let food = {x: 21, y: 20};
+let mdir = {x: 1, y: 0};
+let score = 0;
+let gameTimer;
+let gameEnd;
+let gameQ = false;
+
+const gameCanvas = document.getElementById("gameCanvas");
+gameCanvas.width = BOARD_WIDTH * SQUARE_WIDTH;
+gameCanvas.height = BOARD_HEIGHT * SQUARE_HEIGHT;
+const ctx = gameCanvas.getContext("2d");
+document.addEventListener("keydown", changeDirection);
+const gameStart = document.getElementById("start");
+
+main();
+
+function main() {
+    gameTimer = setInterval(gameRun, GAME_SPEED);
+}
+
+function gameRun() {
+    clearCanvas();
+    drawFood();
+    drawSnake();
+    advanceSnake();
+    didGameEnd();
+    if (gameQ) gameOver();
+}
+
+function gameOver() {
+    clearInterval(gameTimer);
+//    clearCanvas();
+    ctx.fillStyle = HEAD_COLOUR;
+    ctx.strokestyle = HEAD_BORDER_COLOUR;
+    ctx.font = "20px Arial";
+    ctx.fillText("Game Over!" , 30, 30);
+    ctx.fillText(gameEnd, 30, 60);
+    tail = [
+        {x: 14, y: 15},
+        {x: 13, y: 15},
+        {x: 12, y: 15},
+        {x: 11, y: 15}
+    ];
+    head = {x: 15, y: 15};
+    food = {x: 21, y: 20};
+    mdir = {x: 1, y: 0};
+    score = 0;
+    gameQ = false;
+    gameStart.style.display = "block";
+}
+
+function gameNew() {
+    gameStart.style.display = "none";
+    document.getElementById('score').innerHTML = score;
+    main();
+}    
+
+function clearCanvas() {
+    ctx.fillStyle = CANVAS_BACKGROUND_COLOUR;
+    ctx.strokestyle = CANVAS_BORDER_COLOUR;
+    ctx.fillRect(0, 0, BOARD_WIDTH * SQUARE_WIDTH, BOARD_HEIGHT * SQUARE_HEIGHT);
+    ctx.strokeRect(0, 0, BOARD_WIDTH * SQUARE_WIDTH, BOARD_HEIGHT * SQUARE_HEIGHT);
+}
+
+function drawFood() {
+    ctx.fillStyle = FOOD_COLOUR;
+    ctx.strokestyle = FOOD_BORDER_COLOUR;
+    ctx.fillRect(food.x * SQUARE_WIDTH, food.y * SQUARE_HEIGHT, SQUARE_WIDTH, SQUARE_HEIGHT);
+    ctx.strokeRect(food.x*SQUARE_WIDTH, food.y * SQUARE_HEIGHT, SQUARE_WIDTH, SQUARE_HEIGHT);
+}
+
+function drawHead() {
+    ctx.fillStyle = HEAD_COLOUR;
+    ctx.strokestyle = HEAD_BORDER_COLOUR;
+    ctx.fillRect(head.x * SQUARE_WIDTH, head.y * SQUARE_HEIGHT, SQUARE_WIDTH, SQUARE_HEIGHT);
+    ctx.strokeRect(head.x * SQUARE_WIDTH, head.y * SQUARE_HEIGHT, SQUARE_WIDTH, SQUARE_HEIGHT);
+}
+
+function advanceSnake() {
+    tail.unshift(head);
+    head = {x: head.x + mdir.x, y: head.y + mdir.y};
+    if (head.x == food.x && head.y == food.y) {
+        score += 1;
+        document.getElementById('score').innerHTML = score;
+        createFood();
+    } else {
+        tail.pop();
+    }
+}
+
+function didGameEnd() {
+    tail.forEach(function (part) {
+                     if (part.x == head.x && part.y == head.y) {
+                         gameEnd = "Self Hit";
+                         gameQ = true;
+                     }                         
+                 });
+    if (head.x < 0 || head.x > BOARD_WIDTH - 1  || head.y < 0 || head.y > BOARD_HEIGHT - 1) {
+        gameEnd = "Wall Hit";
+        gameQ = true;
+    }
+}
+
+function createFood() {
+    food.x = Math.floor(Math.random() * BOARD_WIDTH);
+    food.y = Math.floor(Math.random() * BOARD_HEIGHT);
+    tail.forEach(function (part) {
+                      if (part.x == food.x && part.y == food.y) createFood();
+                  });
+    if (head.x == food.x && head.y == food.y) createFood();
+}
+
+function drawSnake() {
+    ctx.fillStyle = TAIL_COLOUR;
+    ctx.strokestyle = TAIL_BORDER_COLOUR;
+    tail.forEach(function (part) {
+                     ctx.fillRect(part.x * SQUARE_WIDTH, part.y * SQUARE_HEIGHT, SQUARE_WIDTH, SQUARE_HEIGHT);
+                     ctx.strokeRect(part.x * SQUARE_WIDTH, part.y * SQUARE_HEIGHT, SQUARE_WIDTH, SQUARE_HEIGHT);
+                 });
+    drawHead();
+}
+
+function changeDirection(event) {
+    const keyPressed = event.keyCode;
+    switch (keyPressed) {
+    case 37:
+        mdir.x = -1;
+        mdir.y =  0;
+        break;
+    case 40:
+        mdir.x = 0;
+        mdir.y =  1;
+        break;
+    case 39:
+        mdir.x = 1;
+        mdir.y =  0;
+        break;
+    case 38:
+        mdir.x = 0;
+        mdir.y =  -1;
+        break;
+    }    
+}
+</script>
+</body>
+</html>

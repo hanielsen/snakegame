@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Snake Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="snake.ico">
+<style>
+#board {
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    transform: translate(-50%, 0%);
+}
+#score {
+    text-align: center;
+    font-size: 60px;
+    font-family: "comic sans ms", sans-serif;
+}
+#start {
+    position:relative;
+    top: 350px;
+    display: none;
+    text-align: center;
+    font-size: 20px;
+    font-family: sans-serif;
+    color: blue;
+    animation: blink 1s linear infinite;
+}
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+</style>
+</head>
+<body>
+<div id="score">0</div>
+<canvas id="board" width="300" height="300"></canvas>
+<div id="start">New Game</div>
+
+<script>
+
+function init() {
+    this.speed = 200;
+    this.boardBg = "lightgrey";
+    this.boardBd = "black";
+    this.foodBg = "red";
+    this.foodBd = "darkred";
+    this.headBg = "black";
+    this.headBd = "black";
+    this.tailBg = "lightgreen";
+    this.tailBd = "darkgreen";
+    this.boardW = 30;
+    this.boardH = 30;
+    this.squareW = 10;
+    this.squareH = 10;
+    this.setup = function () {
+        this.cvs = document.getElementById("board");
+        this.cvs.width = this.boardW * this.squareW;
+        this.cvs.height = this.boardH * this.squareH;
+        this.ctx = this.cvs.getContext("2d");
+        this.sctext = document.getElementById("score");
+        this.start = document.getElementById("start");
+        this.start.style.top = 50 + this.boardH * this.squareH + "px";
+        this.start.addEventListener("click", gameNew);
+        document.addEventListener("keydown", moveDir);
+    }
+    this.init = function () {
+        this.tail = [
+            {x: 13, y: 14},
+            {x: 12, y: 14}];
+        this.head = {x: 14, y: 14};
+        this.food = {x: 21, y: 20};
+        this.mdir = {x: 1, y: 0};
+        this.score = 0;
+        this.sctext.innerHTML = this.score;
+        this.start.style.display = "none";
+        this.timer;
+        this.endtext;
+        this.ended = false;
+    }
+}
+
+let g = new init();
+g.setup();
+gameNew();
+
+function gameNew() {
+    g.init();
+    g.timer = setInterval(gameRun, g.speed);
+}
+
+function gameRun() {
+    clearCanvas();
+    drawFood();
+    drawSnake();
+    moveSnake();
+    gameEnd();
+    if (g.ended) gameOver();
+}
+
+function gameOver() {
+    clearInterval(g.timer);
+    g.ctx.fillStyle = g.boardBd;
+    g.ctx.strokestyle = g.boardBd;
+    g.ctx.font = "20px Arial";
+    g.ctx.fillText("Game Over !" , 30, 30);
+    g.ctx.fillText(g.endtext, 30, 60);
+    g.start.style.display = "block";
+}
+
+function moveSnake() {
+    g.tail.unshift(g.head);
+    g.head = {x: g.head.x + g.mdir.x, y: g.head.y + g.mdir.y};
+    if (g.head.x == g.food.x && g.head.y == g.food.y) {
+        g.score += 1;
+        g.sctext.innerHTML = g.score;
+        newFood();
+    } else {
+        g.tail.pop();
+    }
+}
+
+function moveDir(event) {
+    const keyPressed = event.keyCode;
+    switch (keyPressed) {
+    case 37:
+        g.mdir.x = -1;
+        g.mdir.y =  0;
+        break;
+    case 40:
+        g.mdir.x = 0;
+        g.mdir.y =  1;
+        break;
+    case 39:
+        g.mdir.x = 1;
+        g.mdir.y =  0;
+        break;
+    case 38:
+        g.mdir.x = 0;
+        g.mdir.y =  -1;
+        break;
+    }    
+}
+
+function gameEnd() {
+    g.tail.forEach(function (part) {
+        if (part.x == g.head.x && part.y == g.head.y) {
+            g.endtext = "Self Hit";
+            g.ended = true;
+        }                         
+    });
+    if (g.head.x < 0 || g.head.x > g.boardW - 1  || g.head.y < 0 || g.head.y > g.boardH - 1) {
+        g.endtext = "Wall Hit";
+        g.ended = true;
+    }
+}
+
+function newFood() {
+    g.food.x = Math.floor(Math.random() * g.boardW);
+    g.food.y = Math.floor(Math.random() * g.boardH);
+    g.tail.forEach(function (part) {
+        if (part.x == g.food.x && part.y == g.food.y) newFood();
+    });
+    if (g.head.x == g.food.x && g.head.y == g.food.y) newFood();
+}
+
+function clearCanvas() {
+    g.ctx.fillStyle = g.boardBg;
+    g.ctx.strokestyle = g.boardBd;
+    g.ctx.fillRect(0, 0, g.boardW *g.squareW, g.boardH *g.squareH);
+    g.ctx.strokeRect(0, 0, g.boardW *g.squareW, g.boardH *g.squareH);
+}
+
+function drawFood() {
+    g.ctx.fillStyle = g.foodBg;
+    g.ctx.strokestyle = g.foodBd;
+    g.ctx.fillRect(g.food.x * g.squareW, g.food.y * g.squareH, g.squareW, g.squareH);
+    g.ctx.strokeRect(g.food.x * g.squareW, g.food.y * g.squareH, g.squareW, g.squareH);
+}
+
+function drawHead() {
+    g.ctx.fillStyle = g.headBg;
+    g.ctx.strokestyle = g.headBd;
+    g.ctx.fillRect(g.head.x * g.squareW, g.head.y * g.squareH, g.squareW, g.squareH);
+    g.ctx.strokeRect(g.head.x * g.squareW, g.head.y * g.squareH, g.squareW, g.squareH);
+}
+
+function drawSnake() {
+    g.ctx.fillStyle = g.tailBg;
+    g.ctx.strokestyle = g.tailBd;
+    g.tail.forEach(function (part) {
+        g.ctx.fillRect(part.x * g.squareW, part.y * g.squareH, g.squareW, g.squareH);
+        g.ctx.strokeRect(part.x * g.squareW, part.y * g.squareH, g.squareW, g.squareH);
+    });
+    drawHead();
+}
+
+</script>
+</body>
+</html>

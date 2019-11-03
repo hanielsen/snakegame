@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Snake Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="snake.ico">
+<style>
+#board {
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    transform: translate(-50%, 0%);
+}
+#score {
+    text-align: center;
+    font-size: 60px;
+    font-family: "comic sans ms", sans-serif;
+}
+#start {
+    position:relative;
+    top: 350px;
+    display: none;
+    text-align: center;
+    font-size: 20px;
+    font-family: sans-serif;
+    color: blue;
+    animation: blink 1s linear infinite;
+}
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+</style>
+</head>
+<body>
+<div id="score">0</div>
+<canvas id="board" width="300" height="300"></canvas>
+<div id="start">New Game</div>
+
+<script>
+function boardinit() {
+    boardbg = "lightgrey";
+    boardbd = "black";
+    boardw = 30;
+    boardh = 30;
+    slotw = 10;
+    sloth = 10;
+
+    cvs = document.getElementById("board");
+    ctx = cvs.getContext("2d");
+    sctext = document.getElementById("score");
+    start = document.getElementById("start");
+    //img = new Image();
+
+    document.addEventListener("keydown", mdirset);
+    cvs.width = boardw * slotw;
+    cvs.height = boardh * sloth;
+    start.style.top = 50 + boardh * sloth + "px";
+    start.addEventListener("click", gameinit);
+    //img.src = "apple.png";
+}
+
+function gameinit() {
+    gotext = "";
+    mdir = {x: 1, y: 0};
+    food = {x: 21, y: 20};
+    head = {x: 14, y: 14};
+    score = 0;
+    tail = [
+        {x: 13, y: 14},
+        {x: 12, y: 14}
+    ];
+    bomb = [
+        {x: 3, y: 4},
+        {x: 16, y: 16},
+        {x: 23, y: 4},
+        {x: 6, y: 26},
+        {x: 22, y: 24}
+    ];
+    gameend = false;
+    let speed = 200;
+    gametimer = setInterval(gamerun, speed);
+    sctext.innerHTML = score;
+    foodalter();
+    start.style.display = "none";
+}
+
+function boardclear() {
+    ctx.fillStyle = boardbg;
+    ctx.strokestyle = boardbd;
+    ctx.fillRect(0, 0, boardw * slotw, boardh * sloth);
+    ctx.strokeRect(0, 0, boardw * slotw, boardh * sloth);
+}
+
+function boardtext() {
+    ctx.fillStyle = "blue";
+    ctx.strokestyle = "darkblue";
+    ctx.font = "20px Arial";
+    ctx.fillText("Game Over !", 100, 30);
+    ctx.fillText(gotext, 100, 60);
+}
+
+function slotdraw(x, y, dx, dy, bg, bd) {
+    ctx.fillStyle = bg;
+    ctx.strokestyle = bd;
+    ctx.beginPath();
+    ctx.rect(x, y, dx, dy);
+//    ctx.arc(x+dx/2, y+dy/2, dx/2, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.stroke();
+}
+
+function boarddraw() {
+    let foodbg = "red";
+    let foodbd = "darkred";
+    let headbg = "darkgreen";
+    let headbd = "black";
+    let tailbg = "lightgreen";
+    let tailbd = "darkgreenblack";
+    let bombbg = "black";
+    let bombbd = "black";
+//    ctx.drawImage(img, food.x * slotw, food.y * sloth, slotw, sloth);
+    slotdraw(food.x * slotw, food.y * sloth, slotw, sloth, foodbg, foodbd);
+    slotdraw(head.x * slotw, head.y * sloth, slotw, sloth, headbg, headbd);
+    tail.forEach(function (part) {
+        slotdraw(part.x * slotw, part.y * sloth, slotw, sloth, tailbg, tailbd);
+    });
+    bomb.forEach(function (part) {
+        slotdraw(part.x * slotw, part.y * sloth, slotw, sloth, bombbg, bombbd);
+    });
+}
+
+function gamerun() {
+    boardclear();
+    boarddraw();
+    headmove();
+    gametest();
+    if (gameend) {
+        gameover();
+    }
+}
+
+function gameover() {
+    clearInterval(gametimer);
+    boardtext();
+    start.style.display = "block";
+}
+
+function gametest() {
+    tail.forEach(function (part) {
+        if (head.x === part.x && head.y === part.y) {
+            gotext = "Self Hit";
+            gameend = true;
+        }
+    });
+    bomb.forEach(function (part) {
+        if (head.x === part.x && head.y === part.y) {
+            gotext = "Bomb Hit";
+            gameend = true;
+        }
+    });
+    if (head.x < 0 || head.x > boardw - 1 || head.y < 0 || head.y > boardh - 1) {
+        gotext = "Wall Hit";
+        gameend = true;
+    }
+}
+
+function mdirset(event) {
+    let keyP = event.keyCode;
+    if (gameend && keyP === 13) {
+        gameinit();
+    }    
+    switch (keyP) {
+    case 37:
+        mdir.x = -1;
+        mdir.y = 0;
+        break;
+    case 40:
+        mdir.x = 0;
+        mdir.y = 1;
+        break;
+    case 39:
+        mdir.x = 1;
+        mdir.y = 0;
+        break;
+    case 38:
+        mdir.x = 0;
+        mdir.y = -1;
+        break;
+    }
+}
+
+function foodalter() {
+    food.x = Math.floor(Math.random() * boardw);
+    food.y = Math.floor(Math.random() * boardh);
+    tail.forEach(function (part) {
+        if (food.x === part.x && food.y === part.y) {
+            foodalter();
+        }
+    });
+    bomb.forEach(function (part) {
+        if (food.x === part.x && food.y === part.y) {
+            foodalter();
+        }
+    });
+    if (food.x === head.x && food.y === head.y) {
+        foodalter();
+    }
+}
+
+function headmove() {
+    tail.unshift({x: head.x, y: head.y});
+    head.x = head.x + mdir.x;
+    head.y = head.y + mdir.y;
+    if (head.x === food.x && head.y === food.y) {
+        score += 1;
+        sctext.innerHTML = score;
+        foodalter();
+    } else {
+        tail.pop();
+    }
+}
+
+boardinit();
+gameinit();
+
+</script>
+</body>
+</html>

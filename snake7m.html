@@ -134,7 +134,7 @@ function boardinit() {
     start.addEventListener("click", sndinit);
     //img.src = "apple.png";
 //    hitsnd.play();
-    hitsnd.src = "bomb+1.mp3";
+    hitsnd.src = "Bomb+1.mp3";
     hitsnd.setAttribute("preload", "auto");
     hitsnd.setAttribute("control", "none");
     hitsnd.style.display = "none";
@@ -147,7 +147,7 @@ function boardinit() {
 }
 
 function sndinit() {
-    hitsnd.src = "bomb+1.mp3";
+    hitsnd.src = "Bomb+1.mp3";
     hitsnd.muted = true;
     hitsnd.play();
     //hitsnd.muted = false;
@@ -242,7 +242,7 @@ function gamerun() {
 
 function gameover() {
     clearInterval(gametimer);
-    hitsnd.src = "bomb+1.mp3";
+    hitsnd.src = "Bomb+1.mp3";
     hitsnd.muted = false;
     hitsnd.play();
     boardtext();
